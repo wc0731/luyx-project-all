@@ -51,7 +51,7 @@ public class AirPlayPhone extends AirPlay implements IAirPlayPhone, IAirPlay {
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.main);
-        
+        //aaaa
         mIAirPlayPhone = this;
         
         txtServerInfo = (TextView)findViewById(R.id.txtServerInfo);
