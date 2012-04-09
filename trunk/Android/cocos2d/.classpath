@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<classpath>
+	<classpathentry kind="src" path="src"/>
+	<classpathentry kind="con" path="org.eclipse.jdt.launching.JRE_CONTAINER"/>
+	<classpathentry kind="lib" path="/root/WorkSpace/Luyx/Android/develop/android-sdk-linux_86/platforms/android-8/android.jar">
+		<attributes>
+			<attribute name="javadoc_location" value="file:/root/WorkSpace/Luyx/Android/develop/android-sdk-linux_86/docs/reference"/>
+		</attributes>
+		<accessrules>
+			<accessrule kind="nonaccessible" pattern="com/android/internal/**"/>
+		</accessrules>
+	</classpathentry>
+	<classpathentry kind="output" path="src"/>
+</classpath>
