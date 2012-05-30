@@ -15,6 +15,7 @@ public class SkyClient extends UDP {
 		void onSearchTimeout();
 		
 		void onConnectResponse(Connection c);
+		void onConnectDeny(Connection c);
 		void onConnectTimeout();
 		
 		void onDisconnetResponse(Connection c);

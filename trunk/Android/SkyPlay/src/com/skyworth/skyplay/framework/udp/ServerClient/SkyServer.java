@@ -17,6 +17,7 @@ public class SkyServer extends UDP {
 		void onConnectionTimeout(Connection c);
 		
 		void onConnect(Connection c);
+		int chkConnection(Connection c);
 		void onDisconnect(Connection c);
 		
 		void onHeartBeat(Connection c);
@@ -89,16 +90,25 @@ public class SkyServer extends UDP {
 				send(pkgpp);
 				break;
 			case CONNECT:
-				pkgpp.addr = pkg.addr;
-				pkgpp.port = ServerClient.CLIENT_PORT;
-				pkgpp.setData(ServerClient.ServerClientPackage.toBytes(new ServerClient.ServerClientPackage(ServerClient.COMMAND.RES_CONNECT)));
-				send(pkgpp);
-				
-				for(int i = 0; i < readyClientConnection.size(); i++) {
-					if(readyClientConnection.get(i).equals(c))
-						return;
+				int ret = mISkyServer.chkConnection(c);
+				if(ret == 0) {
+					pkgpp.addr = pkg.addr;
+					pkgpp.port = ServerClient.CLIENT_PORT;
+					pkgpp.setData(ServerClient.ServerClientPackage.toBytes(new ServerClient.ServerClientPackage(ServerClient.COMMAND.RES_CONNECT)));
+					send(pkgpp);
+					
+					for(int i = 0; i < readyClientConnection.size(); i++) {
+						if(readyClientConnection.get(i).equals(c))
+							return;
+					}
+					readyClientConnection.add(c);
 				}
-				readyClientConnection.add(c);
+				else {
+					pkgpp.addr = pkg.addr;
+					pkgpp.port = ServerClient.CLIENT_PORT;
+					pkgpp.setData(ServerClient.ServerClientPackage.toBytes(new ServerClient.ServerClientPackage(ServerClient.COMMAND.RES_CONNECT_DENY, ret)));
+					send(pkgpp);
+				}
 				break;
 			case DISCONNECT:
 				pkgpp.addr = pkg.addr;
