@@ -52,6 +52,10 @@ public abstract class UDP extends DatagramSocket {
 		}
 	}
 	
+	public void onDestroy() {
+		close();
+	}
+	
 	private void handle(SkyPackage pkg) {
 		Util.logger("handle package!!");
 		if(!pkg.isReceipt) {

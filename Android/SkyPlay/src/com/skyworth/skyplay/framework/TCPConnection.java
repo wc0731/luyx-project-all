@@ -5,31 +5,34 @@ import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
 import java.net.Socket;
-import java.net.UnknownHostException;
 
-public class TCPClient {
-	public interface ITCPClient {
-		void onSocketClosed(TCPClient c);
-		void onReceivePackage(SkyPackage pkg);
+public class TCPConnection extends Connection {
+	public interface ITCPConnection {
+		void onReceivePackage(TCPConnection c, SkyPackage pkg);
+		void onClosed(TCPConnection c);
 	}
 	
-	/*protected Socket mSocket = null;
+	protected Socket mSocket = null;
 	protected DataInputStream mDataInputStream = null;
 	protected DataOutputStream mDataOutputStream = null;
 	
-	protected ITCPClient mITCPClient = null;
-	
-	public TCPClient(ITCPClient itc, String ip, int port) throws UnknownHostException, IOException {
-		mITCPClient = itc;
-		mSocket = new Socket(ip, port);
+	protected ITCPConnection mITCPConnection = null;
+
+	public TCPConnection(String n, String a, Socket s, ITCPConnection ii) throws IOException {
+		super(n, a);
+		// TODO Auto-generated constructor stub
+		mITCPConnection = ii;
+		mSocket = s;
 		mDataInputStream = new DataInputStream(new BufferedInputStream(mSocket.getInputStream()));
 		mDataOutputStream = new DataOutputStream(mSocket.getOutputStream());
 		receiver.start();
 	}
-	
-	public TCPClient(ITCPClient itc, Socket s) throws IOException {
-		mITCPClient = itc;
-		mSocket = s;
+
+	public TCPConnection(String n, String a, int port, ITCPConnection ii) throws IOException {
+		super(n, a);
+		// TODO Auto-generated constructor stub
+		mITCPConnection = ii;
+		mSocket = new Socket(a, port);
 		mDataInputStream = new DataInputStream(new BufferedInputStream(mSocket.getInputStream()));
 		mDataOutputStream = new DataOutputStream(mSocket.getOutputStream());
 		receiver.start();
@@ -54,12 +57,13 @@ public class TCPClient {
 					pkg.name = mSocket.getInetAddress().getHostName();
 					pkg.addr = mSocket.getInetAddress().getHostAddress();
 					pkg.port = mSocket.getPort();
-					mITCPClient.onReceivePackage(pkg);
+					mITCPConnection.onReceivePackage(TCPConnection.this, pkg);
 				}
+				mITCPConnection.onClosed(TCPConnection.this);
 			} catch (IOException e) {
 				// TODO Auto-generated catch block
 				e.printStackTrace();
 			}	
 		}
-	};*/
+	};
 }

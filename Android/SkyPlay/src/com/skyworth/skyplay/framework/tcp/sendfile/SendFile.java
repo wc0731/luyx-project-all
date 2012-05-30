@@ -1,4 +1,4 @@
-package com.skyworth.skyplay.framework.udp.ServerClient;
+package com.skyworth.skyplay.framework.tcp.sendfile;
 
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
@@ -7,49 +7,45 @@ import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.io.Serializable;
 
-public class ServerClient {
-	public final static int SERVER_PORT = 12888;
-	public final static int CLIENT_PORT = 12889;
+public class SendFile {
+	public static final int SERVER_PORT =23900; 
+	public static final int SERVER_CLIENT =23901; 
 	
-	public final static int HEARTBEAT_TIMEOUT = 30;
-	public final static int SERVER_MAX_CONNECTION = 10;
-
 	public enum COMMAND {
-		SEARCH,
-		CONNECT,
-		DISCONNECT,
-		
-		RES_SEARCH,
-		RES_CONNECT,
-		RES_CONNECT_DENY,
-		RES_DISCONNECT,
-		
-		HEARTBEAT,
+		START,
+		SENDING,
+		END,
 	}
 	
-	public static class ServerClientPackage implements Serializable {
+	public static class SendFilePackage implements Serializable {
+		
 		/**
 		 * 
 		 */
-		private static final long serialVersionUID = 8948320262232127726L;
+		private static final long serialVersionUID = 4256202567324692957L;
 		
-		public COMMAND cmd;
-		public int state;
+		private transient static final int PACKAGE_SIZE = 4096;
 		
-		public ServerClientPackage(COMMAND c) {
+		public COMMAND cmd = null;
+		public String name = null;
+		public long size = 0;
+		public long sign = 0;
+		public byte[] data = new byte[PACKAGE_SIZE];
+		
+		public SendFilePackage(COMMAND c, String n, long s, long si, byte[] d) {
 			cmd = c;
-		}		
-		
-		public ServerClientPackage(COMMAND c, int s) {
-			cmd = c;
-			state = s;
+			name = n;
+			size = s;
+			sign = si;
+			for(int i = 0; i < d.length; i++)
+				data[i] = d[i];
 		}
 		
-		public static ServerClientPackage toPackage(byte[] d) {
+		public static SendFilePackage toPackage(byte[] d) {
 			try {
 				ByteArrayInputStream bin = new ByteArrayInputStream(d);
 				ObjectInputStream oin = new ObjectInputStream(bin);
-				ServerClientPackage pkg = (ServerClientPackage)oin.readObject();
+				SendFilePackage pkg = (SendFilePackage)oin.readObject();
 				oin.close();
 				return pkg;
 			} catch (IOException e) {
@@ -62,7 +58,7 @@ public class ServerClient {
 			return null;
 		}
 		
-		public static byte[] toBytes(ServerClientPackage pkg) {
+		public static byte[] toBytes(SendFilePackage pkg) {
 			try {
 				ByteArrayOutputStream bout = new ByteArrayOutputStream();   
 				ObjectOutputStream oout = new ObjectOutputStream(bout);
