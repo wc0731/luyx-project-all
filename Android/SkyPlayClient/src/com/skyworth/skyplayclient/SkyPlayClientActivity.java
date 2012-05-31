@@ -2,7 +2,7 @@ package com.skyworth.skyplayclient;
 
 import java.net.SocketException;
 
-import com.skyworth.skyplay.framework.Connection;
+import com.skyworth.skyplay.framework.Session;
 import com.skyworth.skyplay.framework.udp.ServerClient.SkyClient;
 import com.skyworth.skyplay.framework.udp.ServerClient.SkyClient.ISkyClient;
 import com.skyworth.skyplay.framework.udp.message.MessageService.MessageServicePackage;
@@ -26,13 +26,19 @@ public class SkyPlayClientActivity extends Activity implements ISkyClient, IMess
 	Button Disconnect = null;
 	TextView txtInfo = null;
 	TextView txtHeartBeat = null;
-	Connection server = null;
 	
 	
 	private EditText sendText = null;
 	private Button btnSend = null;
 	private TextView txtShowMsg = null;
 	private MessageServiceClient mMessageServiceClient = null;
+	
+	class ServerInfo {
+		public String name = null;
+		public String addr = null;
+	}
+	
+	ServerInfo server = new ServerInfo();
 	
     /** Called when the activity is first created. */
     @Override
@@ -42,7 +48,7 @@ public class SkyPlayClientActivity extends Activity implements ISkyClient, IMess
         
         try {
 			mSkyClient = new SkyClient(this);
-			mMessageServiceClient = new MessageServiceClient(this);
+			mMessageServiceClient = new MessageServiceClient(this, mSkyClient);
 		} catch (SocketException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
@@ -62,7 +68,7 @@ public class SkyPlayClientActivity extends Activity implements ISkyClient, IMess
     		@Override
     		public void onClick(View arg0) {
     			// TODO Auto-generated method stub
-    			mSkyClient.connect(server);
+    			mSkyClient.connect(server.addr);
     		}
     	});
         
@@ -89,11 +95,20 @@ public class SkyPlayClientActivity extends Activity implements ISkyClient, IMess
 			}
         });
     }
+    
+	@Override
+	protected void onDestroy() {
+		// TODO Auto-generated method stub
+		mMessageServiceClient.onDestroy();
+		mSkyClient.onDestroy();
+		super.onDestroy();
+	}
 
 	@Override
-	public void onSearchResponse(Connection c) {
+	public void onSearchResponse(String name, String addr) {
 		// TODO Auto-generated method stub
-		server = c;
+		server.name = name;
+		server.addr = addr;
 		onSearchResponseHandler.sendEmptyMessage(0);
 	}
 	
@@ -120,27 +135,13 @@ public class SkyPlayClientActivity extends Activity implements ISkyClient, IMess
 	};
 
 	@Override
-	public void onConnectResponse(Connection c) {
-		// TODO Auto-generated method stub
-		onConnectResponseHandler.sendEmptyMessage(0);
-	}
-	
-	private Handler onConnectResponseHandler = new Handler() {
-		@Override
-		public void handleMessage(Message msg) {
-			// TODO Auto-generated method stub
-			txtInfo.setText("server connected:" + server.name + ":" + server.addr);
-		}
-	};
-
-	@Override
 	public void onConnectTimeout() {
 		// TODO Auto-generated method stub
 		
 	}
 
 	@Override
-	public void onDisconnetResponse(Connection c) {
+	public void onDisconnetResponse(Session c) {
 		// TODO Auto-generated method stub
 		onDisconnetResponseHandler.sendEmptyMessage(0);
 	}
@@ -160,21 +161,7 @@ public class SkyPlayClientActivity extends Activity implements ISkyClient, IMess
 	}
 
 	@Override
-	public void onConnectionTimeout(Connection c) {
-		// TODO Auto-generated method stub
-		onConnectionTimeoutHandler.sendEmptyMessage(0);
-	}
-	
-	private Handler onConnectionTimeoutHandler = new Handler() {
-		@Override
-		public void handleMessage(Message msg) {
-			// TODO Auto-generated method stub
-			txtHeartBeat.setText("onConnectionTimeout!!!");
-		}
-	};
-
-	@Override
-	public void onHeartBeat(Connection c) {
+	public void onHeartBeat(Session c) {
 		// TODO Auto-generated method stub
 		onHeartBeatHandler.sendEmptyMessage(0);
 	}
@@ -205,4 +192,27 @@ public class SkyPlayClientActivity extends Activity implements ISkyClient, IMess
 			txtShowMsg.setText(txtShowMsg.getText() + pkg.data + "\n");
 		}
 	};
+
+	@Override
+	public void onConnectResponse(String name, String addr, int info) {
+		// TODO Auto-generated method stub
+		Message msg = new Message();
+		msg.obj = server;
+		msg.arg1 = info;
+		onConnectResponseHandler.sendMessage(msg);
+	}
+	
+	private Handler onConnectResponseHandler = new Handler() {
+		@Override
+		public void handleMessage(Message msg) {
+			// TODO Auto-generated method stub
+			txtInfo.setText("server " + server.name + ":" + server.addr + "connect info:" + msg.arg1);
+		}
+	};
+
+	@Override
+	public void onServerTimeout(Session c) {
+		// TODO Auto-generated method stub
+		
+	}
 }
