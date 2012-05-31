@@ -73,10 +73,6 @@ public class SkyPackage implements Serializable {
 			return true;
 		return false;
 	}
-	
-	public static Connection getConnection(SkyPackage pkg) {
-		return new Connection(pkg.name, pkg.addr);
-	}
 
 	public static SkyPackage toPackage(byte[] d) {
 		try {

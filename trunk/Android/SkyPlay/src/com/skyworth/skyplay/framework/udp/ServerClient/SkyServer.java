@@ -5,30 +5,32 @@ import java.util.ArrayList;
 import java.util.Timer;
 import java.util.TimerTask;
 
-import com.skyworth.skyplay.framework.Connection;
+import com.skyworth.skyplay.framework.Service.IServiceServer;
+import com.skyworth.skyplay.framework.Session;
+import com.skyworth.skyplay.framework.Session.ISession;
+import com.skyworth.skyplay.framework.Session.SessionPackage;
 import com.skyworth.skyplay.framework.SkyPackage;
 import com.skyworth.skyplay.framework.UDP;
 import com.skyworth.skyplay.framework.Util;
 
 
-public class SkyServer extends UDP {
-
+public class SkyServer extends UDP implements ISession, IServiceServer {
 	public interface ISkyServer {
-		void onConnectionTimeout(Connection c);
+		void onConnect(Session c);
+		void onDisconnect(Session c);
+		void onHeartBeat(Session c);
+		int chkConnection(String name, String addr);
 		
-		void onConnect(Connection c);
-		int chkConnection(Connection c);
-		void onDisconnect(Connection c);
+		void onClientTimeout(Session s);
 		
-		void onHeartBeat(Connection c);
+		void onSessionConnectionChanged(ArrayList<Session> list);
 	}
-
-	protected ArrayList<Connection> readyClientConnection = new ArrayList<Connection>();
-	public static ArrayList<Connection> ClientConnection = new ArrayList<Connection>();
+	
+	public static ArrayList<Session> sessionConnection = new ArrayList<Session>();
 	private ISkyServer mISkyServer = null;
 	
 	public SkyServer(ISkyServer isc) throws SocketException {
-		super(ServerClient.SERVER_PORT);
+		super(ServerClient.PORT);
 		// TODO Auto-generated constructor stub
 		mISkyServer = isc;
 		
@@ -36,26 +38,12 @@ public class SkyServer extends UDP {
 			@Override
 			public void run() {
 				// TODO Auto-generated method stub
-				for(int i = 0; i < ClientConnection.size(); i++) {
+				for(int i = 0; i < sessionConnection.size(); i++) {
 					SkyPackage pkg = new SkyPackage();
-					pkg.addr = ClientConnection.get(i).addr;
-					pkg.port = ServerClient.CLIENT_PORT;
-					pkg.setData(ServerClient.ServerClientPackage.toBytes(new ServerClient.ServerClientPackage(ServerClient.COMMAND.HEARTBEAT)));
+					pkg.addr = sessionConnection.get(i).addr;
+					pkg.port = ServerClient.PORT;
+					pkg.setData(SessionPackage.toBytes(new SessionPackage(SessionPackage.COMMAND.HEARTBEAT, 0)));
 					send(pkg);
-				}
-			}
-        }, 0, 1000);
-		
-		new Timer().schedule(new TimerTask() {
-			@Override
-			public void run() {
-				// TODO Auto-generated method stub
-				for(int i = 0; i < ClientConnection.size(); i++) {
-					ClientConnection.get(i).timeout++;
-					if(ClientConnection.get(i).timeout >= ServerClient.HEARTBEAT_TIMEOUT) {
-						mISkyServer.onConnectionTimeout(ClientConnection.get(i));
-						ClientConnection.remove(i);
-					}
 				}
 			}
         }, 0, 1000);
@@ -78,72 +66,95 @@ public class SkyServer extends UDP {
 	@Override
 	protected void onHandlePackage(SkyPackage pkg) {
 		// TODO Auto-generated method stub
-		ServerClient.ServerClientPackage pp = ServerClient.ServerClientPackage.toPackage(pkg.data);
+		SessionPackage pp = SessionPackage.toPackage(pkg.data);
 		SkyPackage pkgpp = new SkyPackage();
-		Connection c = new Connection(pkg.name, pkg.addr);
-		Util.logger("onHandlePackage: name:" + pkg.name + " addr:" + pkg.addr + "  cmd:" + pp.cmd);
+		
+		Session session = searchSession(pkg.name, pkg.addr);
+		
 		switch(pp.cmd) {
 			case SEARCH:
-				pkgpp.addr = pkg.addr;
-				pkgpp.port = ServerClient.CLIENT_PORT;
-				pkgpp.setData(ServerClient.ServerClientPackage.toBytes(new ServerClient.ServerClientPackage(ServerClient.COMMAND.RES_SEARCH)));
-				send(pkgpp);
+				if(session == null) {
+					pkgpp.addr = pkg.addr;
+					pkgpp.port = ServerClient.PORT;
+					pkgpp.setData(SessionPackage.toBytes(new SessionPackage(SessionPackage.COMMAND.RES_SEARCH, 0)));
+					send(pkgpp);
+				}
 				break;
 			case CONNECT:
-				int ret = mISkyServer.chkConnection(c);
-				if(ret == 0) {
+				if(session == null) {
+					int ret = mISkyServer.chkConnection(pkg.name, pkg.addr);
 					pkgpp.addr = pkg.addr;
-					pkgpp.port = ServerClient.CLIENT_PORT;
-					pkgpp.setData(ServerClient.ServerClientPackage.toBytes(new ServerClient.ServerClientPackage(ServerClient.COMMAND.RES_CONNECT)));
+					pkgpp.port = ServerClient.PORT;
+					pkgpp.setData(SessionPackage.toBytes(new SessionPackage(SessionPackage.COMMAND.RES_CONNECT, ret)));
 					send(pkgpp);
-					
-					for(int i = 0; i < readyClientConnection.size(); i++) {
-						if(readyClientConnection.get(i).equals(c))
-							return;
-					}
-					readyClientConnection.add(c);
-				}
-				else {
-					pkgpp.addr = pkg.addr;
-					pkgpp.port = ServerClient.CLIENT_PORT;
-					pkgpp.setData(ServerClient.ServerClientPackage.toBytes(new ServerClient.ServerClientPackage(ServerClient.COMMAND.RES_CONNECT_DENY, ret)));
-					send(pkgpp);
+					if(ret == 0)
+						connectSession(pkg.name, pkg.addr);
 				}
 				break;
 			case DISCONNECT:
-				pkgpp.addr = pkg.addr;
-				pkgpp.port = ServerClient.CLIENT_PORT;
-				pkgpp.setData(ServerClient.ServerClientPackage.toBytes(new ServerClient.ServerClientPackage(ServerClient.COMMAND.RES_DISCONNECT)));
-				send(pkgpp);
-				mISkyServer.onDisconnect(c);
+				if(session != null) {
+					pkgpp.addr = pkg.addr;
+					pkgpp.port = ServerClient.PORT;
+					pkgpp.setData(SessionPackage.toBytes(new SessionPackage(SessionPackage.COMMAND.RES_DISCONNECT, 0)));
+					send(pkgpp);
+					disconnectSession(session);
+				}
 				break;
 			case HEARTBEAT:
-				for(int i = 0; i < ClientConnection.size(); i++) {
-					if(ClientConnection.get(i).equals(c)) {
-						ClientConnection.get(i).timeout = 0;
-						mISkyServer.onHeartBeat(c);
-						return;
-					}
-				}
-				for(int i = 0; i < readyClientConnection.size(); i++) {
-					if(readyClientConnection.get(i).equals(c)) {
-						readyClientConnection.remove(i);
-						ClientConnection.add(c);
-						mISkyServer.onConnect(c);
-						return;
-					}
+				if(session != null) {
+					pkgpp.addr = session.addr;
+					pkgpp.port = ServerClient.PORT;
+					pkgpp.setData(SessionPackage.toBytes(new SessionPackage(SessionPackage.COMMAND.HEARTBEAT, 0)));
+					send(pkgpp);
+					heartbeatSession(session);
 				}
 				break;
 			default:
 				break;
 		}
 	}
+
+	@Override
+	public void onTimeout(Session s) {
+		// TODO Auto-generated method stub
+		mISkyServer.onClientTimeout(s);
+	}
 	
-	public void disconnectClient(Connection c) {
-		SkyPackage pkg = new SkyPackage();
-		pkg.addr = c.addr;
-		pkg.port = ServerClient.CLIENT_PORT;
-		pkg.setData(ServerClient.ServerClientPackage.toBytes(new ServerClient.ServerClientPackage(ServerClient.COMMAND.RES_DISCONNECT)));
-		send(pkg);
+	private Session searchSession(String name, String addr) {
+		for(int i = 0; i < sessionConnection.size(); i++) {
+			if(sessionConnection.get(i).equals(name, addr))
+				return sessionConnection.get(i);
+		}
+		return null;
+	}
+	
+	private void connectSession(String name, String addr) {
+		Session session = new Session(name, addr, this);
+		sessionConnection.add(session);
+		mISkyServer.onConnect(session);
+		mISkyServer.onSessionConnectionChanged(sessionConnection);
+	}
+	
+	public void disconnectSession(Session session) {
+		mISkyServer.onDisconnect(session);
+		sessionConnection.remove(session);
+		mISkyServer.onSessionConnectionChanged(sessionConnection);
+	}
+	
+	private void heartbeatSession(Session session) {
+		session.heartbeat();
+		mISkyServer.onHeartBeat(session);
+	}
+
+	@Override
+	public Session onHandlePackageSession(SkyPackage pkg) {
+		// TODO Auto-generated method stub
+		return searchSession(pkg.name, pkg.addr);
+	}
+
+	@Override
+	public ArrayList<Session> getClientList() {
+		// TODO Auto-generated method stub
+		return sessionConnection;
 	}
 }

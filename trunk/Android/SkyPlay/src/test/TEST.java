@@ -1,44 +1,49 @@
 package test;
 
 import java.net.SocketException;
+import java.util.ArrayList;
 
 import com.skyworth.skyplay.framework.Connection;
+import com.skyworth.skyplay.framework.Session;
 import com.skyworth.skyplay.framework.udp.ServerClient.SkyServer;
 import com.skyworth.skyplay.framework.udp.ServerClient.SkyServer.ISkyServer;
 
 public class TEST implements ISkyServer {
-	
-	public static void main(String[] args) throws SocketException, InterruptedException {
-		new TEST();
-	}
-	
-	private SkyServer mSkyServer = null;
-	
-	public TEST() throws SocketException {
-		mSkyServer = new SkyServer(this);
-	}
 
 	@Override
-	public void onConnectionTimeout(Connection c) {
-		// TODO Auto-generated method stub
-		System.out.println("Connection:" + c.name + ":" + c.addr + " timeout!!!");
-	}
-
-	@Override
-	public void onConnect(Connection c) {
-		// TODO Auto-generated method stub
-		System.out.println("Connection:" + c.name + ":" + c.addr + " connected!!!");
-	}
-
-	@Override
-	public void onDisconnect(Connection c) {
-		// TODO Auto-generated method stub
-		System.out.println("Connection:" + c.name + ":" + c.addr + " disconnect!!!");
-	}
-
-	@Override
-	public void onHeartBeat(Connection c) {
+	public void onConnect(Session c) {
 		// TODO Auto-generated method stub
 		
 	}
+
+	@Override
+	public void onDisconnect(Session c) {
+		// TODO Auto-generated method stub
+		
+	}
+
+	@Override
+	public void onHeartBeat(Session c) {
+		// TODO Auto-generated method stub
+		
+	}
+
+	@Override
+	public int chkConnection(String name, String addr) {
+		// TODO Auto-generated method stub
+		return 0;
+	}
+
+	@Override
+	public void onClientTimeout(Session s) {
+		// TODO Auto-generated method stub
+		
+	}
+
+	@Override
+	public void onSessionConnectionChanged(ArrayList<Session> list) {
+		// TODO Auto-generated method stub
+		
+	}
+
 }
