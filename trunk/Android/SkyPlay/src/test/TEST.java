@@ -3,7 +3,6 @@ package test;
 import java.net.SocketException;
 import java.util.ArrayList;
 
-import com.skyworth.skyplay.framework.Connection;
 import com.skyworth.skyplay.framework.Session;
 import com.skyworth.skyplay.framework.udp.ServerClient.SkyServer;
 import com.skyworth.skyplay.framework.udp.ServerClient.SkyServer.ISkyServer;

@@ -39,7 +39,7 @@ public class SkyPackage implements Serializable {
 		sign = (long)(Math.random()*Math.pow(2, 63));
 	}
 	
-	public SkyPackage(Connection c, int p) {
+	public SkyPackage(Session c, int p) {
 		addr = c.addr;
 		port = p;
 		sign = (long)(Math.random()*Math.pow(2, 63));
