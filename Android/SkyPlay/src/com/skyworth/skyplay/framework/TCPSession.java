@@ -6,33 +6,26 @@ import java.io.DataOutputStream;
 import java.io.IOException;
 import java.net.Socket;
 
-public class TCPConnection extends Connection {
-	public interface ITCPConnection {
-		void onReceivePackage(TCPConnection c, SkyPackage pkg);
-		void onClosed(TCPConnection c);
+public class TCPSession {
+	public interface ITCPSession {
+		void onReceivePackage(TCPSession s, SkyPackage pkg);
+		void onClosed(TCPSession s);
 	}
+	
+	public String name = null;
+	public String addr = null;
 	
 	protected Socket mSocket = null;
 	protected DataInputStream mDataInputStream = null;
 	protected DataOutputStream mDataOutputStream = null;
 	
-	protected ITCPConnection mITCPConnection = null;
-
-	public TCPConnection(String n, String a, Socket s, ITCPConnection ii) throws IOException {
-		super(n, a);
-		// TODO Auto-generated constructor stub
-		mITCPConnection = ii;
+	private ITCPSession mITCPSession = null;
+	
+	public TCPSession(Socket s, ITCPSession is) throws IOException {
+		mITCPSession = is;
 		mSocket = s;
-		mDataInputStream = new DataInputStream(new BufferedInputStream(mSocket.getInputStream()));
-		mDataOutputStream = new DataOutputStream(mSocket.getOutputStream());
-		receiver.start();
-	}
-
-	public TCPConnection(String n, String a, int port, ITCPConnection ii) throws IOException {
-		super(n, a);
-		// TODO Auto-generated constructor stub
-		mITCPConnection = ii;
-		mSocket = new Socket(a, port);
+		name = mSocket.getInetAddress().getHostName();
+		addr = mSocket.getInetAddress().getHostAddress();
 		mDataInputStream = new DataInputStream(new BufferedInputStream(mSocket.getInputStream()));
 		mDataOutputStream = new DataOutputStream(mSocket.getOutputStream());
 		receiver.start();
@@ -46,7 +39,7 @@ public class TCPConnection extends Connection {
 	public void close() throws IOException {
 		mSocket.close();
 	}
-
+	
 	private Thread receiver = new Thread() {
 		public void run() {
 			try {
@@ -57,9 +50,9 @@ public class TCPConnection extends Connection {
 					pkg.name = mSocket.getInetAddress().getHostName();
 					pkg.addr = mSocket.getInetAddress().getHostAddress();
 					pkg.port = mSocket.getPort();
-					mITCPConnection.onReceivePackage(TCPConnection.this, pkg);
+					mITCPSession.onReceivePackage(TCPSession.this, pkg);
 				}
-				mITCPConnection.onClosed(TCPConnection.this);
+				mITCPSession.onClosed(TCPSession.this);
 			} catch (IOException e) {
 				// TODO Auto-generated catch block
 				e.printStackTrace();

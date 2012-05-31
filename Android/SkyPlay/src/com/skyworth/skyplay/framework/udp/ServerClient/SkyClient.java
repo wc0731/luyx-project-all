@@ -1,5 +1,7 @@
 package com.skyworth.skyplay.framework.udp.ServerClient;
 
+import java.io.IOException;
+import java.net.Socket;
 import java.net.SocketException;
 import java.util.Timer;
 import java.util.TimerTask;
@@ -8,10 +10,13 @@ import com.skyworth.skyplay.framework.Service.IServiceClient;
 import com.skyworth.skyplay.framework.Session;
 import com.skyworth.skyplay.framework.Session.ISession;
 import com.skyworth.skyplay.framework.Session.SessionPackage;
+import com.skyworth.skyplay.framework.TCPServer.ITCPServer;
 import com.skyworth.skyplay.framework.SkyPackage;
+import com.skyworth.skyplay.framework.TCPServer;
+import com.skyworth.skyplay.framework.TCPSession;
 import com.skyworth.skyplay.framework.UDP;
 
-public class SkyClient extends UDP implements ISession, IServiceClient {
+public class SkyClient extends UDP implements ISession, IServiceClient, ITCPServer {
 	public interface ISkyClient {
 		void onSearchResponse(String name, String addr);
 		void onSearchTimeout();
@@ -39,6 +44,20 @@ public class SkyClient extends UDP implements ISession, IServiceClient {
 		mISkyClient = isc;
 	}
 
+	@Override
+	public void onDestroy() {
+		// TODO Auto-generated method stub
+		try {
+			disconnect();
+			if(serverSession != null)
+				serverSession.close();
+			super.onDestroy();
+		} catch (IOException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+	}
+	
 	@Override
 	protected void onSendFailed(SkyPackage pkg) {
 		// TODO Auto-generated method stub
@@ -155,5 +174,22 @@ public class SkyClient extends UDP implements ISession, IServiceClient {
 	public Session getServer() {
 		// TODO Auto-generated method stub
 		return serverSession;
+	}
+
+	@Override
+	public void onNewTCPSession(TCPServer server, Socket s) {
+		// TODO Auto-generated method stub
+		try {
+			serverSession.addTCPSession(new TCPSession(s, server));
+		} catch (IOException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+	}
+
+	@Override
+	public void onTCPSessionClosed(TCPSession s) {
+		// TODO Auto-generated method stub
+		serverSession.removeTCPSession(s);
 	}
 }

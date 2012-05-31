@@ -1,5 +1,7 @@
 package com.skyworth.skyplay.framework.udp.ServerClient;
 
+import java.io.IOException;
+import java.net.Socket;
 import java.net.SocketException;
 import java.util.ArrayList;
 import java.util.Timer;
@@ -10,11 +12,14 @@ import com.skyworth.skyplay.framework.Session;
 import com.skyworth.skyplay.framework.Session.ISession;
 import com.skyworth.skyplay.framework.Session.SessionPackage;
 import com.skyworth.skyplay.framework.SkyPackage;
+import com.skyworth.skyplay.framework.TCPServer.ITCPServer;
+import com.skyworth.skyplay.framework.TCPServer;
+import com.skyworth.skyplay.framework.TCPSession;
 import com.skyworth.skyplay.framework.UDP;
 import com.skyworth.skyplay.framework.Util;
 
 
-public class SkyServer extends UDP implements ISession, IServiceServer {
+public class SkyServer extends UDP implements ISession, IServiceServer, ITCPServer {
 	public interface ISkyServer {
 		void onConnect(Session c);
 		void onDisconnect(Session c);
@@ -51,6 +56,19 @@ public class SkyServer extends UDP implements ISession, IServiceServer {
 		Util.logger("SkyPackage.SIZE:" + SkyPackage.SIZE);
 	}
 
+	@Override
+	public void onDestroy() {
+		// TODO Auto-generated method stub
+		try {
+			for(int i = 0; i < sessionConnection.size(); i++)
+				sessionConnection.get(i).close();
+			super.onDestroy();
+		} catch (IOException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+	}
+	
 	@Override
 	protected void onSendFailed(SkyPackage pkg) {
 		// TODO Auto-generated method stub
@@ -156,5 +174,27 @@ public class SkyServer extends UDP implements ISession, IServiceServer {
 	public ArrayList<Session> getClientList() {
 		// TODO Auto-generated method stub
 		return sessionConnection;
+	}
+
+	@Override
+	public void onNewTCPSession(TCPServer server, Socket s) {
+		// TODO Auto-generated method stub
+		try {
+			Session session = searchSession(s.getInetAddress().getHostName(), s.getInetAddress().getHostAddress());
+			if(session != null) {
+				session.addTCPSession(new TCPSession(s, server));
+			}
+		} catch (IOException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+	}
+
+	@Override
+	public void onTCPSessionClosed(TCPSession s) {
+		// TODO Auto-generated method stub
+		Session session = searchSession(s.name, s.addr);
+		if(session != null)
+			session.removeTCPSession(s);
 	}
 }

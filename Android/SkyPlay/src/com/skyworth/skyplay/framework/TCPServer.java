@@ -3,51 +3,43 @@ package com.skyworth.skyplay.framework;
 import java.io.IOException;
 import java.net.ServerSocket;
 import java.net.Socket;
-import java.util.ArrayList;
 
-import com.skyworth.skyplay.framework.TCPConnection.ITCPConnection;
+import com.skyworth.skyplay.framework.TCPSession.ITCPSession;
 
-public abstract class TCPServer extends ServerSocket implements ITCPConnection {
-	protected ArrayList<TCPConnection> connectionList = new ArrayList<TCPConnection>();
-
-	public TCPServer(int port) throws IOException {
-		super(port);
-		// TODO Auto-generated constructor stub
-		listener.start();
+public abstract class TCPServer extends ServerSocket implements ITCPSession {
+	public interface ITCPServer {
+		void onNewTCPSession(TCPServer server, Socket s);
+		void onTCPSessionClosed(TCPSession s);
 	}
 	
-	public void closeAllConnction() throws IOException {
-		for(int i = 0; i < connectionList.size(); i++)
-			connectionList.get(i).close();
+	private ITCPServer mITCPServer = null;
+
+	public TCPServer(int port, ITCPServer is) throws IOException {
+		super(port);
+		// TODO Auto-generated constructor stub
+		mITCPServer = is;
+		listener.start();
 	}
 	
 	public void onDestroy() throws IOException {
 		close();
 	}
 	
-	protected void onNewTCPConnection(TCPConnection c) {
-		connectionList.add(c);
-	}
-	
 	private Thread listener = new Thread() {
 		public void run() {
 			try {
-				while(true) {
-					Socket s = accept();
-					TCPConnection c = new TCPConnection(s.getInetAddress().getHostName(), s.getInetAddress().getHostAddress(), s, TCPServer.this);
-					onNewTCPConnection(c);
-				}
+				while(true)
+					mITCPServer.onNewTCPSession(TCPServer.this, accept());
 			} catch (IOException e) {
-				// TODO Auto-generated catch block
+			// TODO Auto-generated catch block
 				e.printStackTrace();
 			}
 		}
 	};
 
 	@Override
-	public void onClosed(TCPConnection c) {
+	public void onClosed(TCPSession s) {
 		// TODO Auto-generated method stub
-		if(connectionList.contains(c))
-			connectionList.remove(c);
+		mITCPServer.onTCPSessionClosed(s);
 	}
 }
