@@ -1,22 +1,14 @@
 package com.skyworth.skyplay.framework.tcp.sendfile;
 
-import java.io.ByteArrayInputStream;
-import java.io.ByteArrayOutputStream;
 import java.io.DataOutputStream;
-import java.io.IOException;
-import java.io.ObjectInputStream;
-import java.io.ObjectOutputStream;
 import java.io.Serializable;
+
+import com.skyworth.skyplay.framework.Packages;
 
 public class SendFile {
 	public static final int PORT =23900; 
 
-	public static class Task implements Serializable {
-		/**
-		 * 
-		 */
-		private static final long serialVersionUID = 8582584178120540189L;
-
+	public static class Task {
 		public long id = 0;
 		
 		public String name = null;
@@ -26,17 +18,21 @@ public class SendFile {
 		DataOutputStream fileOut = null;
 	}
 	
-	public static class SendFilePackage implements Serializable {
+	public static class SendFilePackage extends Packages implements Serializable {
 		
 		/**
 		 * 
 		 */
-		private static final long serialVersionUID = 4256202567324692957L;
-		
+		private static final long serialVersionUID = -7071752343499922022L;
+
 		public transient static final int PACKAGE_SIZE = 4096;
 		
-		public COMMAND cmd = null;
-		public Task task = null;
+		public COMMAND cmd = COMMAND.START;
+		public String name = "";
+		public long id = 0;
+		public long size = 0;
+		public long progress = 0;
+		
 		public int len = 0;
 		public byte[] data = new byte[PACKAGE_SIZE];
 		
@@ -49,44 +45,14 @@ public class SendFile {
 		
 		public SendFilePackage(COMMAND c, Task t, int l, byte[] d) {
 			cmd = c;
-			task = t;
+			id = t.id;
+			name = t.name;
+			size = t.size;
 			if(d != null) {
 				len = l;
 				for(int i = 0; i < d.length; i++)
 					data[i] = d[i];
 			}
-		}
-		
-		public static SendFilePackage toPackage(byte[] d) {
-			try {
-				ByteArrayInputStream bin = new ByteArrayInputStream(d);
-				ObjectInputStream oin = new ObjectInputStream(bin);
-				SendFilePackage pkg = (SendFilePackage)oin.readObject();
-				oin.close();
-				return pkg;
-			} catch (IOException e) {
-				// TODO Auto-generated catch block
-				e.printStackTrace();
-			} catch (ClassNotFoundException e) {
-				// TODO Auto-generated catch block
-				e.printStackTrace();
-			} 
-			return null;
-		}
-		
-		public static byte[] toBytes(SendFilePackage pkg) {
-			try {
-				ByteArrayOutputStream bout = new ByteArrayOutputStream();   
-				ObjectOutputStream oout = new ObjectOutputStream(bout);
-				oout.writeObject(pkg);     
-				oout.close();
-				byte[] bb = bout.toByteArray();
-				return bb;
-			} catch (IOException e) {
-				// TODO Auto-generated catch block
-				e.printStackTrace();
-			}
-			return null; 
 		}
 	}
 }

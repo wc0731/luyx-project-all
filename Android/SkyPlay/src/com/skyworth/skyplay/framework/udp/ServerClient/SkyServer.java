@@ -12,6 +12,7 @@ import com.skyworth.skyplay.framework.Session;
 import com.skyworth.skyplay.framework.Session.ISession;
 import com.skyworth.skyplay.framework.Session.SessionPackage;
 import com.skyworth.skyplay.framework.SkyPackage;
+import com.skyworth.skyplay.framework.TCPInSession;
 import com.skyworth.skyplay.framework.TCPServer.ITCPServer;
 import com.skyworth.skyplay.framework.TCPServer;
 import com.skyworth.skyplay.framework.TCPSession;
@@ -84,7 +85,7 @@ public class SkyServer extends UDP implements ISession, IServiceServer, ITCPServ
 	@Override
 	protected void onHandlePackage(SkyPackage pkg) {
 		// TODO Auto-generated method stub
-		SessionPackage pp = SessionPackage.toPackage(pkg.data);
+		SessionPackage pp = (SessionPackage)SessionPackage.toPackage(pkg.data);
 		SkyPackage pkgpp = new SkyPackage();
 		
 		Session session = searchSession(pkg.name, pkg.addr);
@@ -182,7 +183,7 @@ public class SkyServer extends UDP implements ISession, IServiceServer, ITCPServ
 		try {
 			Session session = searchSession(s.getInetAddress().getHostName(), s.getInetAddress().getHostAddress());
 			if(session != null) {
-				session.addTCPSession(new TCPSession(s, server));
+				session.addTCPSession(new TCPInSession(s, server));
 			}
 		} catch (IOException e) {
 			// TODO Auto-generated catch block

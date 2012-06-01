@@ -42,7 +42,7 @@ public class MessageServiceServer extends UDP {
 		// TODO Auto-generated method stub
 		Session s = mIServiceServer.onHandlePackageSession(pkg);
 		if(s != null)
-			mIMessageServiceServer.onReceivePackage(s, MessageServicePackage.toPackage(pkg.data));
+			mIMessageServiceServer.onReceivePackage(s, (MessageServicePackage)MessageServicePackage.toPackage(pkg.data));
 	}
 	
 	public void broadcast(String msg) {

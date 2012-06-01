@@ -84,7 +84,7 @@ public abstract class UDP extends DatagramSocket {
 					receive(recvPacket);
 					Util.logger("package incoming!!");
 					if(!Util.getLocalIP().equals(recvPacket.getAddress().getHostAddress())) {
-						SkyPackage pkg = SkyPackage.toPackage(recvBuf);
+						SkyPackage pkg = (SkyPackage)SkyPackage.toPackage(recvBuf);
 						pkg.name = recvPacket.getAddress().getHostName();
 						pkg.addr = recvPacket.getAddress().getHostAddress();
 						pkg.port = recvPacket.getPort();

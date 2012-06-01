@@ -1,26 +1,17 @@
 package com.skyworth.skyplay.framework;
 
-import java.io.ByteArrayInputStream;
-import java.io.ByteArrayOutputStream;
-import java.io.IOException;
-import java.io.ObjectInputStream;
-import java.io.ObjectOutputStream;
 import java.io.Serializable;
 import java.net.DatagramPacket;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
 
 
-public class SkyPackage implements Serializable {
-
+public class SkyPackage extends Packages implements Serializable {
+	
 	/**
 	 * 
 	 */
-	private static final long serialVersionUID = 1L;
-
-	/**
-	 * 
-	 */
+	private static final long serialVersionUID = 7004032381695940177L;
 	
 	public transient static final int DATALEN = 8192;
 	public transient static final int SIZE = SkyPackage.toBytes(new SkyPackage()).length;
@@ -59,10 +50,12 @@ public class SkyPackage implements Serializable {
 	}
 	
 	public void setData(byte[] d) {
-		int i;
-		len = d.length;
-		for(i = 0; i < d.length; i++)
-			data[i] = d[i];
+		if(d != null) {
+			int i;
+			len = d.length;
+			for(i = 0; i < d.length; i++)
+				data[i] = d[i];
+		}
 	}
 	
 	@Override
@@ -72,38 +65,6 @@ public class SkyPackage implements Serializable {
 		if(sign == pkg.sign)
 			return true;
 		return false;
-	}
-
-	public static SkyPackage toPackage(byte[] d) {
-		try {
-			ByteArrayInputStream bin = new ByteArrayInputStream(d);
-			ObjectInputStream oin = new   ObjectInputStream(bin);
-			SkyPackage pkg = (SkyPackage)oin.readObject();
-			oin.close();
-			return pkg;
-		} catch (IOException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		} catch (ClassNotFoundException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		} 
-		return null;
-	}
-	
-	public static byte[] toBytes(SkyPackage pkg) {
-		try {
-			ByteArrayOutputStream bout = new ByteArrayOutputStream();   
-			ObjectOutputStream oout = new ObjectOutputStream(bout);
-			oout.writeObject(pkg);     
-			oout.close();
-			byte[] bb = bout.toByteArray();
-			return bb;
-		} catch (IOException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		}
-		return null; 
 	}
 	
 	public static DatagramPacket toDatagramPacket(SkyPackage pkg) {
