@@ -61,7 +61,7 @@ public class SkyClient extends UDP implements ISession, IServiceClient, ITCPServ
 	@Override
 	protected void onSendFailed(SkyPackage pkg) {
 		// TODO Auto-generated method stub
-		SessionPackage pp = SessionPackage.toPackage(pkg.data);
+		SessionPackage pp = (SessionPackage)SessionPackage.toPackage(pkg.data);
 		switch(pp.cmd) {
 			case RES_SEARCH:
 				mISkyClient.onSearchTimeout();
@@ -86,7 +86,7 @@ public class SkyClient extends UDP implements ISession, IServiceClient, ITCPServ
 	@Override
 	protected void onHandlePackage(SkyPackage pkg) {
 		// TODO Auto-generated method stub
-		SessionPackage pp = SessionPackage.toPackage(pkg.data);
+		SessionPackage pp = (SessionPackage)SessionPackage.toPackage(pkg.data);
 		switch(pp.cmd) {
 			case RES_SEARCH:
 				mISkyClient.onSearchResponse(pkg.name, pkg.addr);

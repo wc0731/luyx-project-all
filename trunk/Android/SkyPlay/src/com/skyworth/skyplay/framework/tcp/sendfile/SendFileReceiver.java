@@ -54,35 +54,44 @@ public class SendFileReceiver extends TCPServer {
 		try {
 			Session session = mIServiceServer.onHandlePackageSession(pkg);
 			if(session != null && session.equals(c.name, c.addr)) {
-				SendFilePackage sfPKG = SendFilePackage.toPackage(pkg.data);
-				Task task = searchTask(sfPKG.task.id);
-				switch(sfPKG.cmd) {
-					case START:
-						File file = new File(save_path + "/" + sfPKG.task.name);
-						if(file.exists())
-							file.delete();
-						sfPKG.task.fileOut = new DataOutputStream(new BufferedOutputStream(new FileOutputStream(save_path + "/" + sfPKG.task.name)));
-						tasklist.add(sfPKG.task);
-						mISendFileServer.onReceiveStart(session, sfPKG.task);
-						break;
-					case SENDING:
-						task.fileOut.write(sfPKG.data, 0, sfPKG.len);
-						task.progress += sfPKG.data.length;
-						mISendFileServer.onReceiving(session, task, sfPKG.len, sfPKG.data);
-						break;
-					case END:
-						task.fileOut.close();
-						task.name = save_path + "/" + task.name;
-						mISendFileServer.onReceiveEnd(session, task);
-						tasklist.remove(task);
-						break;
-					case STOP:
-						task.fileOut.close();
-						mISendFileServer.onReceiveStop(session, task);
-						tasklist.remove(task);
-						break;
-					default:
-						break;
+				byte[] data = new byte[pkg.len];
+				for(int i = 0; i < pkg.len; i++)
+					data[i] = pkg.data[i];
+				SendFilePackage sfPKG = (SendFilePackage)SendFilePackage.toPackage(data);
+				if(sfPKG != null) {
+					Task task = searchTask(sfPKG.id);
+					switch(sfPKG.cmd) {
+						case START:
+							File file = new File(save_path + "/" + sfPKG.name);
+							if(file.exists())
+								file.delete();
+							Task newTask = new Task();
+							newTask.id = sfPKG.id;
+							newTask.name = sfPKG.name;
+							newTask.size = sfPKG.size;
+							newTask.fileOut = new DataOutputStream(new BufferedOutputStream(new FileOutputStream(save_path + "/" + sfPKG.name)));
+							tasklist.add(newTask);
+							mISendFileServer.onReceiveStart(session, newTask);
+							break;
+						case SENDING:
+							task.fileOut.write(sfPKG.data, 0, sfPKG.len);
+							task.progress += sfPKG.len;
+							mISendFileServer.onReceiving(session, task, sfPKG.len, sfPKG.data);
+							break;
+						case END:
+							task.fileOut.close();
+							task.name = save_path + "/" + task.name;
+							mISendFileServer.onReceiveEnd(session, task);
+							tasklist.remove(task);
+							break;
+						case STOP:
+							task.fileOut.close();
+							mISendFileServer.onReceiveStop(session, task);
+							tasklist.remove(task);
+							break;
+						default:
+							break;
+					}
 				}
 			}	
 		} catch (FileNotFoundException e) {

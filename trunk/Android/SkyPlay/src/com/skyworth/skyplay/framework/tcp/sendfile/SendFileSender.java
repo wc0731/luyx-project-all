@@ -9,6 +9,7 @@ import java.net.Socket;
 import java.net.UnknownHostException;
 
 import com.skyworth.skyplay.framework.SkyPackage;
+import com.skyworth.skyplay.framework.TCPOutSession;
 import com.skyworth.skyplay.framework.TCPSession;
 import com.skyworth.skyplay.framework.TCPSession.ITCPSession;
 import com.skyworth.skyplay.framework.tcp.sendfile.SendFile.SendFilePackage;
@@ -25,44 +26,43 @@ public class SendFileSender implements ITCPSession {
 	
 	private class SendThread extends Thread {
 		public void run() {
-			boolean isFinished = false;
-			while(!isStop && !isFinished) {
-	            try {
-					DataInputStream fis = new DataInputStream(new BufferedInputStream(new FileInputStream(mfile)));
-					SendFilePackage pkg = new SendFilePackage(COMMAND.START, task, 0, null);
-					SkyPackage skypkg = new SkyPackage(address, SendFile.PORT, SendFilePackage.toBytes(pkg));
-					mTCPSession.send(skypkg);
-					mISendFileSender.onSendStart();
-	
+            try {
+				DataInputStream fis = new DataInputStream(new BufferedInputStream(new FileInputStream(mfile)));
+				SendFilePackage pkg = new SendFilePackage(COMMAND.START, task, 0, null);
+				byte[] data = SendFilePackage.toBytes(pkg);
+				System.out.println("data.len:" + data.length);
+				SkyPackage skypkg = new SkyPackage(address, SendFile.PORT, data);
+				mTCPOutSession.send(skypkg);
+				mISendFileSender.onSendStart();
+
+		        while (!isPaused) {
 			        byte[] buf = new byte[SendFilePackage.PACKAGE_SIZE];
-			        while (!isPaused) {
-			            int read = 0;
-			            if (fis != null)
-			                read = fis.read(buf);
-			            if (read == -1) {
-				            pkg = new SendFilePackage(COMMAND.END, task, 0, null);
-				            skypkg = new SkyPackage(address, SendFile.PORT, SendFilePackage.toBytes(pkg));
-							mTCPSession.send(skypkg);
-				            mISendFileSender.onSendEnd();
-				            isFinished = true;
-			                break;
-			            }
-			            pkg = new SendFilePackage(COMMAND.SENDING, task, read, buf);
+		            int read = 0;
+		            if (fis != null)
+		                read = fis.read(buf);
+		            if (read == -1) {
+			            pkg = new SendFilePackage(COMMAND.END, task, 0, null);
 			            skypkg = new SkyPackage(address, SendFile.PORT, SendFilePackage.toBytes(pkg));
-						mTCPSession.send(skypkg);
-			            task.progress += read;
-			            mISendFileSender.onSending((int)(task.progress*100/task.size));
-			        }
-				} catch (IOException e) {
-					// TODO Auto-generated catch block
-					e.printStackTrace();
-				}
+			            mTCPOutSession.send(skypkg);
+			            mISendFileSender.onSendEnd();
+		                break;
+		            }
+		            pkg = new SendFilePackage(COMMAND.SENDING, task, read, buf);
+		            skypkg = new SkyPackage(address, SendFile.PORT, SendFilePackage.toBytes(pkg));
+		            mTCPOutSession.send(skypkg);
+		            task.progress += read;
+		            mISendFileSender.onSending((int)(task.progress*100/task.size));
+		        }
+			} catch (IOException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
 			}
+			
 		}
 	} 
 	
 	private ISendFileSender mISendFileSender = null;
-	private TCPSession mTCPSession = null;
+	private TCPOutSession mTCPOutSession = null;
 	private SendThread sendThread = null;
 	private File mfile= null;
 	private Task task = null;
@@ -73,7 +73,7 @@ public class SendFileSender implements ITCPSession {
 	private String address = null;
 	
 	public SendFileSender(String addr, File file, ISendFileSender sfs) throws UnknownHostException, IOException {
-		mTCPSession = new TCPSession(new Socket(addr, SendFile.PORT), this);
+		mTCPOutSession = new TCPOutSession(new Socket(addr, SendFile.PORT), this);
 		mfile = file;
 		mISendFileSender = sfs;
 		address = addr;
@@ -97,7 +97,7 @@ public class SendFileSender implements ITCPSession {
 	public void stop() throws IOException {
 		isStop = true;
 		SendFilePackage pkg = new SendFilePackage(COMMAND.STOP, task, 0, null);
-		mTCPSession.send(SkyPackage.toPackage(SendFilePackage.toBytes(pkg)));
+		mTCPOutSession.send((SkyPackage)SkyPackage.toPackage(SendFilePackage.toBytes(pkg)));
 	}
 
 	@Override

@@ -40,7 +40,7 @@ public class MessageServiceClient extends UDP {
 	protected void onHandlePackage(SkyPackage pkg) {
 		// TODO Auto-generated method stub
 		if(mIServiceClient.onHandlePackageSession(pkg) != null)
-			mIMessageServiceClient.onReceivePackage(MessageServicePackage.toPackage(pkg.data));
+			mIMessageServiceClient.onReceivePackage((MessageServicePackage)MessageServicePackage.toPackage(pkg.data));
 	}
 	
 	public SkyPackage sendMessage(String msg) {
